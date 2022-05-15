@@ -1,17 +1,19 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional
+
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
+from kavenegar import *
 
 # to get a string like this run:
 # openssl rand -hex 32
 SECRET_KEY = "09125e094faa6ca2556d818166b7a0063493f70f9f6f0f4caaacf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
 
 fake_users_db = {
     "johndoe": {
@@ -22,6 +24,12 @@ fake_users_db = {
         "disabled": False,
     }
 }
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+app = FastAPI()
 
 
 class Token(BaseModel):
@@ -42,13 +50,6 @@ class User(BaseModel):
 
 class UserInDB(User):
     hashed_password: str
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-app = FastAPI()
 
 
 def verify_password(plain_password, hashed_password):
@@ -137,3 +138,32 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
     return [{"item_id": "Foo", "owner": current_user.username}]
 
 
+@app.get("/otp/send_otp/{phone_num}")
+def send_otp(phone_num: str):
+    try:
+        import json
+    except ImportError:
+        import simplejson as json
+    try:
+        kavehnegar_apikey = os.environ['kavehnegar_apikey']
+        api = KavenegarAPI(kavehnegar_apikey)
+        params = {
+            'receptor': str(phone_num),
+            'template': 'CoinJet',
+            'token': '1234',
+            'type': 'sms',
+        }
+        print("Params:", params)
+        rsp = str(api.verify_lookup(params))
+        print("rsp:", rsp)
+    except APIException as e:
+        exp = str(e)
+        exp_decode = exp.encode('latin1').decode('unicode_escape').encode('latin1').decode('utf8')
+        print("exp_decode:", exp_decode)
+    except HTTPException as e:
+        print(str(e))
+
+
+@app.get("/otp/check_otp/{otp}")
+def check_otp(otp: int):
+    pass

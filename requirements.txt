@@ -3,3 +3,4 @@ uvicorn[standard]==0.17.1
 python-multipart
 python-jose
 passlib[bcrypt]
+kavenegar
