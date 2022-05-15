@@ -25,6 +25,9 @@ fake_users_db = {
     }
 }
 
+otps = {}
+kave_enabled = False
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -144,24 +147,28 @@ def send_otp(phone_num: str):
         import json
     except ImportError:
         import simplejson as json
-    try:
-        kavehnegar_apikey = os.environ['kavehnegar_apikey']
-        api = KavenegarAPI(kavehnegar_apikey)
-        params = {
-            'receptor': str(phone_num),
-            'template': 'CoinJet',
-            'token': '1234',
-            'type': 'sms',
-        }
-        print("Params:", params)
-        rsp = str(api.verify_lookup(params))
-        print("rsp:", rsp)
-    except APIException as e:
-        exp = str(e)
-        exp_decode = exp.encode('latin1').decode('unicode_escape').encode('latin1').decode('utf8')
-        print("exp_decode:", exp_decode)
-    except HTTPException as e:
-        print(str(e))
+    kavehnegar_apikey = os.environ['kavehnegar_apikey']
+    print(type(otps))
+    if kave_enabled:
+        try:
+            api = KavenegarAPI(kavehnegar_apikey)
+            params = {
+                'receptor': str(phone_num),
+                'template': 'CoinJet',
+                'token': '1234',
+                'type': 'sms',
+            }
+            print("Params:", params)
+            rsp = str(api.verify_lookup(params))
+            print("rsp:", rsp)
+        except APIException as e:
+            exp = str(e)
+            exp_decode = exp.encode('latin1').decode('unicode_escape').encode('latin1').decode('utf8')
+            print("exp_decode:", exp_decode)
+        except HTTPException as e:
+            print(str(e))
+    else:
+        print("kave_enabled is False")
 
 
 @app.get("/otp/check_otp/{otp}")
