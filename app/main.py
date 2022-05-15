@@ -1,4 +1,6 @@
+import logging
 import os
+import random
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -9,11 +11,15 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from kavenegar import *
 
+from . import log
+
 # to get a string like this run:
 # openssl rand -hex 32
 SECRET_KEY = "09125e094faa6ca2556d818166b7a0063493f70f9f6f0f4caaacf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+OTP_RESEND_TIMEOUT = 60
 
 fake_users_db = {
     "johndoe": {
@@ -143,12 +149,24 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
 
 @app.get("/otp/send_otp/{phone_num}")
 def send_otp(phone_num: str):
+    # ToDo: We have to normalize all type of phone_num (e.g. +989121002003, 09121002003, 9121002003)
+    # before stroing/searching them in otps dictionary.
     try:
         import json
     except ImportError:
         import simplejson as json
+    logging.debug("OTPs: {}".format(str(otps)))
     kavehnegar_apikey = os.environ['kavehnegar_apikey']
-    print(type(otps))
+    prev_otp_data = otps.get(phone_num)
+    if prev_otp_data:
+        if prev_otp_data['timestamp'] > datetime.now() - timedelta(seconds=OTP_RESEND_TIMEOUT):
+            return {"msg": "No SMS was sent! Since we have sent an SMS to this number recently!"}
+        else:
+            otps.pop(phone_num)
+    rand_otp = random.randint(10100, 99900)
+    otp_value = {"otp": rand_otp, "timestamp": datetime.now()}
+    otps[phone_num] = otp_value
+    logging.debug("The ({0}:{1}) pair inserted into OTPs".format(phone_num, otp_value))
     if kave_enabled:
         try:
             api = KavenegarAPI(kavehnegar_apikey)
@@ -158,19 +176,28 @@ def send_otp(phone_num: str):
                 'token': '1234',
                 'type': 'sms',
             }
-            print("Params:", params)
+            logging.debug("Params:", params)
             rsp = str(api.verify_lookup(params))
-            print("rsp:", rsp)
+            logging.info("rsp:", rsp)
         except APIException as e:
             exp = str(e)
             exp_decode = exp.encode('latin1').decode('unicode_escape').encode('latin1').decode('utf8')
-            print("exp_decode:", exp_decode)
+            logging.error("exp_decode:", exp_decode)
         except HTTPException as e:
-            print(str(e))
+            logging.error(str(e))
     else:
-        print("kave_enabled is False")
+        logging.debug("kave_enabled is False")
+    return {"msg": "A SMS was sent successfully!"}
 
 
-@app.get("/otp/check_otp/{otp}")
-def check_otp(otp: int):
-    pass
+@app.get("/otp/check_otp/{phone_num}/{otp}")
+def check_otp(phone_num: str, otp: int):
+    logging.debug("OTPs: {}".format(str(otps)))
+    prev_otp_data = otps.get(phone_num)
+    if prev_otp_data:
+        if prev_otp_data['timestamp'] > datetime.now() - timedelta(seconds=OTP_RESEND_TIMEOUT) and prev_otp_data['otp'] == otp:
+            return {"msg": "True"}
+        else:
+            return {"msg": "False"}
+    else:
+        return {'msg': 'False'}
