@@ -19,7 +19,9 @@ SECRET_KEY = "09125e094faa6ca2556d818166b7a0063493f70f9f6f0f4caaacf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-OTP_RESEND_TIMEOUT = 60
+OTP_RESEND_TIMEOUT = 120
+KAVE_ENABLED = True
+otps = {}
 
 fake_users_db = {
     "johndoe": {
@@ -30,9 +32,6 @@ fake_users_db = {
         "disabled": False,
     }
 }
-
-otps = {}
-kave_enabled = False
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -167,22 +166,22 @@ def send_otp(phone_num: str):
     otp_value = {"otp": rand_otp, "timestamp": datetime.now()}
     otps[phone_num] = otp_value
     logging.debug("The ({0}:{1}) pair inserted into OTPs".format(phone_num, otp_value))
-    if kave_enabled:
+    if KAVE_ENABLED:
         try:
             api = KavenegarAPI(kavehnegar_apikey)
             params = {
                 'receptor': str(phone_num),
                 'template': 'CoinJet',
-                'token': '1234',
+                'token': str(rand_otp),
                 'type': 'sms',
             }
-            logging.debug("Params:", params)
+            logging.debug("Params: {}".format(params))
             rsp = str(api.verify_lookup(params))
-            logging.info("rsp:", rsp)
+            logging.info("rsp: {}".format(rsp))
         except APIException as e:
             exp = str(e)
             exp_decode = exp.encode('latin1').decode('unicode_escape').encode('latin1').decode('utf8')
-            logging.error("exp_decode:", exp_decode)
+            logging.error("exp_decode: {}".format(exp_decode))
         except HTTPException as e:
             logging.error(str(e))
     else:
@@ -195,7 +194,8 @@ def check_otp(phone_num: str, otp: int):
     logging.debug("OTPs: {}".format(str(otps)))
     prev_otp_data = otps.get(phone_num)
     if prev_otp_data:
-        if prev_otp_data['timestamp'] > datetime.now() - timedelta(seconds=OTP_RESEND_TIMEOUT) and prev_otp_data['otp'] == otp:
+        if prev_otp_data['timestamp'] > datetime.now() - timedelta(seconds=OTP_RESEND_TIMEOUT) and \
+                prev_otp_data['otp'] == otp:
             return {"msg": "True"}
         else:
             return {"msg": "False"}
