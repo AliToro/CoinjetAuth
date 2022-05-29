@@ -1,4 +1,7 @@
 import logging
+import os
+from datetime import datetime, timedelta
+from random import random
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -9,7 +12,7 @@ from crud_models import UserCreate, UserResponse
 from db import get_db, Base, engine
 from db_actions import get_user, create_user
 from security import manager, verify_password
-from . import log
+import log
 
 from kavenegar import *
 
@@ -42,6 +45,7 @@ def register(user: UserCreate, db=Depends(get_db)):
 def login(data: OAuth2PasswordRequestForm = Depends()):
     email = data.username
     password = data.password
+    logging.info("Logging attemp with email:{}".format(email))
 
     user = get_user(email)  # we are using the same function to retrieve the user
     if user is None:
