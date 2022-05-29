@@ -44,9 +44,10 @@ def login(data: OAuth2PasswordRequestForm = Depends()):
     return {'access_token': access_token, 'token_type': 'Bearer'}
 
 
-@app.get("/private")
-def private_route(user=Depends(manager)):
-    return {"detail": f"Welcome {user.email}"}
+@app.get("/auth/is_login")
+def is_login(user=Depends(manager)):
+    return {"status": "True"}
+
 
 
 if __name__ == "__main__":
