@@ -16,8 +16,6 @@ import log
 
 from kavenegar import *
 
-
-
 OTP_RESEND_TIMEOUT = 120
 KAVE_ENABLED = True
 otps = {}
