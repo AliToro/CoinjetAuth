@@ -14,7 +14,7 @@ from db_actions import get_user, create_user
 from security import manager, verify_password
 import log
 
-from kavenegar import *
+from kavenegar import KavenegarAPI, APIException
 
 OTP_RESEND_TIMEOUT = 120
 KAVE_ENABLED = True
