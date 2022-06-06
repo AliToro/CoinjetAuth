@@ -36,7 +36,7 @@ def register(user: UserCreate, db=Depends(get_db)):
         raise HTTPException(status_code=400, detail="A user with this email already exists")
     else:
         db_user = create_user(db, user)
-        return UserResponse(id=db_user.id, email=db_user.email, is_admin=db_user.is_admin)
+        return UserResponse(id=db_user.id, email=db_user.email)
 
 
 @app.post(DEFAULT_SETTINGS.token_url)

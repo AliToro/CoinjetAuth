@@ -23,7 +23,8 @@ def get_user(email: str, db: Session = None) -> Optional[User]:
 def create_user(db: Session, user: UserCreate) -> User:
     """ Create a new entry in the database user table """
     user_data = user.dict()
-    user_data["password"] = hash_password(user.password)
+    if user_data["password"] is not None:
+       user_data["password"] = hash_password(user.password)
     db_user = User(**user_data)
     db.add(db_user)
     db.commit()

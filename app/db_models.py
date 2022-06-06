@@ -7,7 +7,8 @@ class User(Base):
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True, index=True)
-    phone = Column(String, unique=True, index=True)
+    #ToDo: Phone should be "unique", as well.
+    phone = Column(String, index=True)
     role = Column(Integer)
     email = Column(String, unique=True, index=True)
     firstname = Column(String)
