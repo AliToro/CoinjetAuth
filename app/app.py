@@ -32,8 +32,9 @@ def setup():
 
 @app.post("/auth/register")
 def register(user: UserCreate, db=Depends(get_db)):
-    if get_user(user.email) is not None:
-        raise HTTPException(status_code=400, detail="A user with this email already exists")
+    res = get_user(user.email, user.phone, user.username)
+    if res[0]:
+        raise HTTPException(status_code=400, detail=res[1])
     else:
         db_user = create_user(db, user)
         return UserResponse(id=db_user.id, email=db_user.email)
