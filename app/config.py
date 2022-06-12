@@ -12,7 +12,7 @@ class Settings():
     secret: str  # autmatically taken from environement variable
     # database_uri: str = "sqlite:///../app.db"
     database_uri: str = "postgresql://{}:{}@{}/{}".format(user, password, host, db_name)
-    token_url: str = "/auth/token"
+    token_url: str = "/auth/login"
     secret = os.environ['secret']
 
 
