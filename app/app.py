@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime, timedelta
-from random import random
+import random
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -10,7 +10,7 @@ from fastapi_login.exceptions import InvalidCredentialsException
 from config import DEFAULT_SETTINGS
 from crud_models import UserCreate, UserResponse
 from db import get_db, Base, engine
-from db_actions import get_user, create_user
+from db_actions import get_user, create_user, check_user
 from security import manager, verify_password
 import log
 
@@ -32,7 +32,7 @@ def setup():
 
 @app.post("/auth/register")
 def register(user: UserCreate, db=Depends(get_db)):
-    res = get_user(user.email, user.phone, user.username)
+    res = check_user(user.phone, user.email, user.username)
     if res[0]:
         raise HTTPException(status_code=400, detail=res[1])
     else:
@@ -40,23 +40,18 @@ def register(user: UserCreate, db=Depends(get_db)):
         return UserResponse(id=db_user.id, email=db_user.email)
 
 
-@app.post(DEFAULT_SETTINGS.token_url)
-def login(data: OAuth2PasswordRequestForm = Depends()):
-    email = data.username
-    password = data.password
-    logging.info("Logging attemp with email:{}".format(email))
-
-    user = get_user(email)  # we are using the same function to retrieve the user
-    if user is None:
+@app.post(DEFAULT_SETTINGS.token_url+"/{phone_num}/{otp}")
+def login(phone_num: str, otp: int):
+    if check_otp(phone_num, otp)['msg'] == 'False':
         # ToDo: We can raise our own HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-        #      detail="Incorrect username or password", headers={"WWW-Authenticate": "Bearer"}, )
+        #      detail="Incorrect otp number", headers={"WWW-Authenticate": "Bearer"}, )
         raise InvalidCredentialsException
-    elif not verify_password(password, user.password):
-        raise InvalidCredentialsException
+
+    user = get_user(phone_num)
 
     # ToDo: Add expires_delta to create_access_token
     access_token = manager.create_access_token(
-        data=dict(sub=user.email)
+        data=dict(sub=user.phone)
     )
     return {'access_token': access_token, 'token_type': 'Bearer'}
 
@@ -116,10 +111,13 @@ def check_otp(phone_num: str, otp: int):
     if prev_otp_data:
         if prev_otp_data['timestamp'] > datetime.now() - timedelta(seconds=OTP_RESEND_TIMEOUT) and \
                 prev_otp_data['otp'] == otp:
+            logging.debug("OTP is valid")
             return {"msg": "True"}
         else:
+            logging.debug("OTP is not valid")
             return {"msg": "False"}
     else:
+        logging.debug("We had no OTP for this number")
         return {'msg': 'False'}
 
 

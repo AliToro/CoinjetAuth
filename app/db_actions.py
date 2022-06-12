@@ -9,7 +9,18 @@ from security import hash_password, manager
 
 
 @manager.user_loader
-def get_user(email: str, phone: str, username: str = None, db: Session = None):
+def get_user(phone_num: str, db: Session = None) -> Optional[User]:
+    """ Return the user with the corresponding email """
+    if db is None:
+        # No db session was provided so we have to manually create a new one
+        # Closing of the connection is handled inside of DBContext.__exit__
+        with DBContext() as db:
+            return db.query(User).filter(User.phone == phone_num).first()
+    else:
+        return db.query(User).filter(User.phone == phone_num).first()
+
+
+def check_user(phone: str, email: str = None, username: str = None, db: Session = None):
     """ Detect existing users with the same email, phone, or username. """
     duplicate = False
     message = ""
@@ -20,9 +31,10 @@ def get_user(email: str, phone: str, username: str = None, db: Session = None):
     if db.query(User).filter(User.email == email).first() is not None:
         duplicate = True
         message = duplicate_message(message, "email")
-    if db.query(User).filter(User.phone == phone).first() is not None:
-        duplicate = True
-        message = duplicate_message(message, "phone")
+    if email is not None:
+        if db.query(User).filter(User.phone == phone).first() is not None:
+            duplicate = True
+            message = duplicate_message(message, "phone")
     if username is not None:
         if db.query(User).filter(User.username == username).first() is not None:
             duplicate = True
