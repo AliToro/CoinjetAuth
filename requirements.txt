@@ -14,6 +14,7 @@ kavenegar=1.1.2
 lazy-object-proxy==1.5.2
 mccabe==0.6.1
 passlib[bcrypt]==1.7.4
+psycopg2-binary==2.9.3
 pycparser==2.20
 pydantic==1.8.2
 PyJWT==2.0.1
