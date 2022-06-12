@@ -133,3 +133,5 @@ local_env.sh
 .idea/*
 
 files/*
+
+*.db
