@@ -6,6 +6,7 @@ import random
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_login.exceptions import InvalidCredentialsException
+from starlette import status
 
 from config import DEFAULT_SETTINGS
 from crud_models import UserCreate, UserResponse
@@ -40,14 +41,17 @@ def register(user: UserCreate, db=Depends(get_db)):
         return UserResponse(id=db_user.id, email=db_user.email)
 
 
-@app.post(DEFAULT_SETTINGS.token_url+"/{phone_num}/{otp}")
+@app.post(DEFAULT_SETTINGS.token_url + "/{phone_num}/{otp}")
 def login(phone_num: str, otp: int):
     if check_otp(phone_num, otp)['msg'] == 'False':
-        # ToDo: We can raise our own HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-        #      detail="Incorrect otp number", headers={"WWW-Authenticate": "Bearer"}, )
-        raise InvalidCredentialsException
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect OTP",
+                            headers={"WWW-Authenticate": "Bearer"}, )
 
     user = get_user(phone_num)
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="There is no user with this phone number!",
+                            headers={"WWW-Authenticate": "Bearer"}, )
 
     # ToDo: Add expires_delta to create_access_token
     access_token = manager.create_access_token(
@@ -61,7 +65,7 @@ def is_login(user=Depends(manager)):
     return {"status": "True"}
 
 
-@app.get("/otp/send_otp/{phone_num}")
+@app.post("/otp/send_otp/{phone_num}")
 def send_otp(phone_num: str):
     # ToDo: We have to normalize all type of phone_num (e.g. +989121002003, 09121002003, 9121002003)
     # before stroing/searching them in otps dictionary.
@@ -104,7 +108,7 @@ def send_otp(phone_num: str):
     return {"msg": "A SMS was sent successfully!"}
 
 
-@app.get("/otp/check_otp/{phone_num}/{otp}")
+@app.post("/otp/check_otp/{phone_num}/{otp}")
 def check_otp(phone_num: str, otp: int):
     logging.debug("OTPs: {}".format(str(otps)))
     prev_otp_data = otps.get(phone_num)
