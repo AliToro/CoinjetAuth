@@ -15,4 +15,4 @@ class Settings(BaseSettings):
     token_url: str = "/auth/token"
 
 
-DEFAULT_SETTINGS = Settings(_env_file="../files/.env")
+DEFAULT_SETTINGS = Settings(_env_file="files/.env")

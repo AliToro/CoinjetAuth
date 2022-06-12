@@ -4,16 +4,14 @@ from datetime import datetime, timedelta
 import random
 
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_login.exceptions import InvalidCredentialsException
 from starlette import status
 
-from config import DEFAULT_SETTINGS
-from crud_models import UserCreate, UserResponse
-from db import get_db, Base, engine
-from db_actions import get_user, create_user, check_user
-from security import manager, verify_password
-import log
+from .config import DEFAULT_SETTINGS
+from .crud_models import UserCreate, UserResponse
+from .db import get_db, Base, engine
+from .db_actions import get_user, create_user, check_user
+from .security import manager, verify_password
+from . import log
 
 from kavenegar import KavenegarAPI, APIException
 
@@ -124,8 +122,3 @@ def check_otp(phone_num: str, otp: int):
         logging.debug("We had no OTP for this number")
         return {'msg': 'False'}
 
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("app:app")

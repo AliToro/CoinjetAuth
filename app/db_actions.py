@@ -2,10 +2,10 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from crud_models import UserCreate
-from db import DBContext
-from db_models import User
-from security import hash_password, manager
+from .crud_models import UserCreate
+from .db import DBContext
+from .db_models import User
+from .security import hash_password, manager
 
 
 @manager.user_loader
