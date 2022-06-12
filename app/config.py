@@ -8,11 +8,12 @@ host = os.environ['coinjet_db_host']
 db_name = os.environ['coinjet_db_dbname']
 
 
-class Settings(BaseSettings):
+class Settings():
     secret: str  # autmatically taken from environement variable
     # database_uri: str = "sqlite:///../files/app.db"
     database_uri: str = "postgresql://{}:{}@{}/{}".format(user, password, host, db_name)
     token_url: str = "/auth/token"
+    secret = os.environ['secret']
 
 
-DEFAULT_SETTINGS = Settings(_env_file=".env")
+DEFAULT_SETTINGS = Settings()
