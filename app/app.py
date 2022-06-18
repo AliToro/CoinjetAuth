@@ -121,4 +121,3 @@ def check_otp(phone_num: str, otp: int):
     else:
         logging.debug("We had no OTP for this number")
         return {'msg': 'False'}
-
