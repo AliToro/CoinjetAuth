@@ -1,0 +1,23 @@
+name: deploy on server
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build
+    runs-on: self-hosted
+    steps:
+    - name: build
+      run: |
+        cd /home/coinjet-auth/dockerize/
+        docker container stop coinjet-auth-cnt
+        docker container rm coinjet-auth-cnt
+        rm -r *
+        rm -r .git*
+        git clone https://github.com/AliToro/CoinjetAuth.git .
+        docker build -t coinjet-auth .
+        docker run --env-file ../docker_env.list -d --name coinjet-auth-cnt -p 8000:8000 coinjet-auth
