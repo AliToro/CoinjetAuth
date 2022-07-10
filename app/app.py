@@ -42,19 +42,12 @@ def register(user: UserCreate, db=Depends(get_db)):
 @app.post(DEFAULT_SETTINGS.token_url + "/{phone_num}/{otp}")
 def login(phone_num: str, otp: int):
     if check_otp(phone_num, otp)['msg'] == 'False':
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect OTP",
-                            headers={"WWW-Authenticate": "Bearer"}, )
-
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect OTP")
     user = get_user(phone_num)
-
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="There is no user with this phone number!",
-                            headers={"WWW-Authenticate": "Bearer"}, )
-
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="There is no user with this phone number!")
     # ToDo: Add expires_delta to create_access_token
-    access_token = manager.create_access_token(
-        data=dict(sub=user.phone)
-    )
+    access_token = manager.create_access_token(data=dict(sub=user.phone))
     return {'access_token': access_token, 'token_type': 'Bearer'}
 
 
@@ -121,4 +114,3 @@ def check_otp(phone_num: str, otp: int):
     else:
         logging.debug("We had no OTP for this number")
         return {'msg': 'False'}
-
