@@ -11,7 +11,7 @@ from .crud_models import UserCreate, UserResponse
 from .db import get_db, Base, engine
 from .db_actions import get_user, create_user, check_user
 from .security import manager, verify_password
-from . import log
+from . import log, utils
 
 from kavenegar import KavenegarAPI, APIException
 
@@ -31,6 +31,7 @@ def setup():
 
 @app.post("/auth/register")
 def register(user: UserCreate, db=Depends(get_db)):
+    user.phone = utils.normalize_phone_num(user.phone)
     res = check_user(user.phone, user.email, user.username)
     if res[0]:
         raise HTTPException(status_code=400, detail=res[1])
@@ -41,6 +42,7 @@ def register(user: UserCreate, db=Depends(get_db)):
 
 @app.post(DEFAULT_SETTINGS.token_url + "/{phone_num}/{otp}")
 def login(phone_num: str, otp: int):
+    phone_num = utils.normalize_phone_num(phone_num)
     if check_otp(phone_num, otp)['msg'] == 'False':
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect OTP")
     user = get_user(phone_num)
@@ -60,6 +62,7 @@ def is_login(user=Depends(manager)):
 def send_otp(phone_num: str):
     # ToDo: We have to normalize all type of phone_num (e.g. +989121002003, 09121002003, 9121002003)
     # before stroing/searching them in otps dictionary.
+    phone_num = utils.normalize_phone_num(phone_num)
     try:
         import json
     except ImportError:
@@ -101,6 +104,7 @@ def send_otp(phone_num: str):
 
 @app.post("/otp/check_otp/{phone_num}/{otp}")
 def check_otp(phone_num: str, otp: int):
+    phone_num = utils.normalize_phone_num(phone_num)
     logging.debug("OTPs: {}".format(str(otps)))
     prev_otp_data = otps.get(phone_num)
     if prev_otp_data:

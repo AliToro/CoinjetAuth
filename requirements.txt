@@ -28,3 +28,4 @@ toml==0.10.2
 typing-extensions==3.7.4.3
 uvicorn==0.13.4
 wrapt==1.12.1
+phonenumbers==8.12.51
