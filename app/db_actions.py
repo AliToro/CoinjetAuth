@@ -28,13 +28,13 @@ def check_user(phone: str, email: str = None, username: str = None, db: Session 
         # No db session was provided so we have to manually create a new one
         # Closing of the connection is handled inside of DBContext.__exit__
         db = DBContext().db
-    if db.query(User).filter(User.email == email).first() is not None:
+    if db.query(User).filter(User.phone == phone).first() is not None:
         duplicate = True
-        message = duplicate_message(message, "email")
+        message = duplicate_message(message, "phone")
     if email is not None:
-        if db.query(User).filter(User.phone == phone).first() is not None:
+        if db.query(User).filter(User.email == email).first() is not None:
             duplicate = True
-            message = duplicate_message(message, "phone")
+            message = duplicate_message(message, "email")
     if username is not None:
         if db.query(User).filter(User.username == username).first() is not None:
             duplicate = True

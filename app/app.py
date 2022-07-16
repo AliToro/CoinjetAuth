@@ -7,10 +7,11 @@ from fastapi import Depends, FastAPI, HTTPException
 from starlette import status
 
 from .config import DEFAULT_SETTINGS
-from .crud_models import UserCreate, UserResponse
+from .crud_models import UserCreate
 from .db import get_db, Base, engine
 from .db_actions import get_user, create_user, check_user
-from .security import manager, verify_password
+from .role import UserRole
+from .security import manager
 from . import log, utils
 
 from kavenegar import KavenegarAPI, APIException
@@ -36,8 +37,12 @@ def register(user: UserCreate, db=Depends(get_db)):
     if res[0]:
         raise HTTPException(status_code=400, detail=res[1])
     else:
+        if user.role is None:
+            user.role = UserRole.TRADER.value
         db_user = create_user(db, user)
-        return UserResponse(id=db_user.id, email=db_user.email)
+        if db_user.password is not None:
+            db_user.password = "REDACTED"
+        return db_user
 
 
 @app.post(DEFAULT_SETTINGS.token_url + "/{phone_num}/{otp}")

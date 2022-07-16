@@ -4,10 +4,10 @@ from pydantic import BaseModel, EmailStr
 
 class UserCreate(BaseModel):
     phone: str
-    role: int
-    email: EmailStr
-    firstname: str
-    lastname: str
+    role: Optional[int]
+    email: Optional[EmailStr]
+    firstname: Optional[str]
+    lastname: Optional[str]
     avatar: Optional[str]  # FileUrl of pydantic is a better type option
     telegram_id: Optional[str]
     telegram_username: Optional[str]
@@ -16,9 +16,3 @@ class UserCreate(BaseModel):
     password: Optional[str]
 
 
-class UserResponse(BaseModel):
-    id: int
-    email: str
-
-    class Config:
-        orm_mode = True
