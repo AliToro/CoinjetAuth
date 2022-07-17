@@ -59,9 +59,9 @@ def login(otp: int, user: UserCreate, db=Depends(get_db)):
             return output
 
 
-@app.get("/auth/is_login")
+@app.get("/auth/profile")
 def is_login(user=Depends(manager)):
-    return {"status": "True"}
+    return user
 
 
 @app.post("/otp/send_otp/{phone_num}")
