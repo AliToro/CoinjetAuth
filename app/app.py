@@ -30,32 +30,33 @@ def setup():
     print(f"Created {len(engine.table_names())} tables: {engine.table_names()}")
 
 
-@app.post("/auth/register")
-def register(user: UserCreate, db=Depends(get_db)):
-    user.phone = utils.normalize_phone_num(user.phone)
-    res = check_user(user.phone, user.email, user.username)
-    if res[0]:
-        raise HTTPException(status_code=400, detail=res[1])
-    else:
-        if user.role is None:
-            user.role = UserRole.TRADER.value
-        db_user = create_user(db, user)
-        if db_user.password is not None:
-            db_user.password = "REDACTED"
-        return db_user
-
-
-@app.post(DEFAULT_SETTINGS.token_url + "/{phone_num}/{otp}")
-def login(phone_num: str, otp: int):
-    phone_num = utils.normalize_phone_num(phone_num)
-    if check_otp(phone_num, otp)['msg'] == 'False':
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect OTP")
-    user = get_user(phone_num)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="There is no user with this phone number!")
+def create_token(phone):
     # ToDo: Add expires_delta to create_access_token
-    access_token = manager.create_access_token(data=dict(sub=user.phone))
+    access_token = manager.create_access_token(data=dict(sub=phone))
     return {'access_token': access_token, 'token_type': 'Bearer'}
+
+
+@app.post(DEFAULT_SETTINGS.token_url + "/{otp}")
+def login(otp: int, user: UserCreate, db=Depends(get_db)):
+    user.phone = utils.normalize_phone_num(user.phone)
+    if check_otp(user.phone, otp)['msg'] == 'False':
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect OTP")
+    res = check_user(user.phone)
+    if res[0]:
+        output = {'user': get_user(user.phone), 'tokens': [create_token(user.phone)]}
+        return output
+    else:
+        res = check_user(user.phone, user.email, user.username)
+        if res[0]:
+            raise HTTPException(status_code=400, detail=res[1])
+        else:
+            if user.role is None:
+                user.role = UserRole.TRADER.value
+            db_user = create_user(db, user)
+            if db_user.password is not None:
+                db_user.password = "REDACTED"
+            output = {'user': db_user, 'tokens': [create_token(user.phone)]}
+            return output
 
 
 @app.get("/auth/is_login")
