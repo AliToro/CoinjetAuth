@@ -7,9 +7,9 @@ from fastapi import Depends, FastAPI, HTTPException
 from starlette import status
 
 from .config import DEFAULT_SETTINGS
-from .crud_models import UserCreate
+from .crud_models import UserCreate, UserUpdate
 from .db import get_db, Base, engine
-from .db_actions import get_user, create_user, check_user
+from .db_actions import get_user, create_user, check_user, update_user
 from .role import UserRole
 from .security import manager
 from . import log, utils
@@ -60,8 +60,14 @@ def login(otp: int, user: UserCreate, db=Depends(get_db)):
 
 
 @app.get("/auth/profile")
-def is_login(user=Depends(manager)):
+def profile(user=Depends(manager)):
     return user
+
+
+@app.post("/auth/profile")
+def update_profile(new_user: UserUpdate, user=Depends(manager), db=Depends(get_db)):
+    db_user = update_user(db, user, new_user)
+    return db_user
 
 
 @app.post("/otp/send_otp/{phone_num}")

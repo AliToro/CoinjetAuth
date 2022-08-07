@@ -60,3 +60,14 @@ def create_user(db: Session, user: UserCreate) -> User:
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def update_user(db: Session, user: User, input_user: UserCreate) -> User:
+    """ Update an entry in the database user table """
+    input_user = input_user.dict(exclude_unset=True)
+    for key, value in input_user.items():
+        setattr(user, key, value)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
